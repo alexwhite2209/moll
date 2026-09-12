@@ -118,7 +118,7 @@
     const stageGone = () => {
       if (!stageSec) return false;
       const r = stageSec.getBoundingClientRect();
-      return r.bottom < innerHeight * 0.5 || r.top > innerHeight;
+      return r.bottom < innerHeight * 0.05 || r.top > innerHeight;   // держим до тех пор, пока кадр на экране
     };
 
     let beatCard = null;          // на телефоне табличку зажигает ролик, когда доехал до такта
@@ -140,7 +140,17 @@
       cards.forEach(x => x.classList.toggle('in', x === c));
     });
 
+    // финальная надпись уходит вверх вместе с последним кадром, а не висит поверх
+    const slate = steps.querySelector('.slate');
+    const slideSlate = () => {
+      if (!slate || !stageSec) return;
+      if (innerWidth >= 900) { slate.style.removeProperty('--exit'); return; }
+      const over = stageSec.getBoundingClientRect().bottom - innerHeight;
+      slate.style.setProperty('--exit', Math.min(0, over).toFixed(0) + 'px');
+    };
+
     const reveal = () => {
+      slideSlate();
       if (stageGone()) { cards.forEach(c => c.classList.remove('in')); return; }
       if (innerWidth < 900 && beatCard) cards.forEach(c => c.classList.toggle('in', c === beatCard));
     };

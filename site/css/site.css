@@ -158,7 +158,7 @@ p{margin:0}
 .step-final{justify-content:center}
 .slate{background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;
   padding:0 6px;width:auto;max-width:32rem;justify-items:center;text-align:center;gap:14px}
-.anim .slate{opacity:1;transform:none}
+.anim .slate,.anim .slate.in{opacity:1;transform:translate3d(0,var(--exit,0px),0)}
 .slate .eyebrow,.slate h2 span,.slate .morph,.slate > p,.slate .acts{
   opacity:0;transform:translateY(26px) scale(.97);filter:blur(6px);
   transition:opacity .55s ease,transform .75s cubic-bezier(.2,.75,.2,1),filter .6s ease;
