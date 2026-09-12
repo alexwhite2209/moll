@@ -144,7 +144,6 @@
     const slate = steps.querySelector('.slate');
     const slideSlate = () => {
       if (!slate || !stageSec) return;
-      if (innerWidth >= 900) { slate.style.removeProperty('--exit'); return; }
       const over = stageSec.getBoundingClientRect().bottom - innerHeight;
       slate.style.setProperty('--exit', Math.min(0, over).toFixed(0) + 'px');
     };
