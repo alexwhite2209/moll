@@ -112,12 +112,14 @@
     document.documentElement.classList.add('anim'); // без JS таблички просто видны
     const cards = [...steps.querySelectorAll('.scard')];
     const reveal = () => {
-      const h = innerHeight;
+      const h = innerHeight, line = h * 0.75;   // как только сцена дошла до этой линии — её табличка на экране
+      let best = null;
       cards.forEach(c => {
-        const r = c.getBoundingClientRect();
-        const seen = Math.min(r.bottom, h) - Math.max(r.top, 0);
-        c.classList.toggle('in', seen > Math.min(r.height * 0.35, h * 0.18));
+        const step = c.closest('.step') || c;
+        const r = step.getBoundingClientRect();
+        if (r.top <= line && r.bottom > h * 0.2) best = c;   // берём последнюю подходящую
       });
+      cards.forEach(c => c.classList.toggle('in', c === best));
     };
     ['scroll', 'resize', 'wheel', 'touchmove', 'orientationchange'].forEach(ev => addEventListener(ev, reveal, { passive: true }));
     if (window.IntersectionObserver) {
@@ -242,9 +244,11 @@
   cats.forEach((c, i) => {
     const it = el('div', 'ring-item');
     const mins = c.items.map(p => p.min).filter(Boolean);
-    it.innerHTML = `<a class="ring-card" href="catalog.html#cat-${c.id}" aria-label="${esc(c.name)}">
+    it.innerHTML = `<div class="ring-card">
       <img src="${c.img}" alt="" loading="lazy" width="240" height="330">
-      <span class="cap"><b>${esc(c.name.split(':')[0])}</b><em>от ${moneyCU(Math.min(...mins))}</em><small>${c.items.length} ${plural(c.items.length, 'товар', 'товара', 'товаров')}</small></span></a>`;
+      <a class="ring-hit" href="catalog.html#cat-${c.id}" aria-label="${esc(c.name)}"></a>
+      <span class="cap"><b>${esc(c.name.split(':')[0])}</b><em>от ${moneyCU(Math.min(...mins))}</em><small>${c.items.length} ${plural(c.items.length, 'товар', 'товара', 'товаров')}</small>
+      <a class="btn btn-primary btn-sm ring-go" href="catalog.html#cat-${c.id}">Перейти →</a></span></div>`;
     ringBox.appendChild(it);
   });
   scanCU(ringBox);
@@ -282,9 +286,11 @@
     vel = (next - ringRot) / dt * 16;
     ringRot = next; drag.t = now;
   };
+  let movedRecently = 0;
   const onUp = e => {
     if (!drag) return;
-    const wasDrag = drag.moved > 6;
+    const wasDrag = drag.moved > 8;
+    if (wasDrag) movedRecently = performance.now();
     drag = null;
     stageBox.classList.remove('dragging');
     scrolling = false;
@@ -302,7 +308,9 @@
   stageBox.addEventListener('pointercancel', onUp);
   stageBox.addEventListener('pointerleave', onUp);
   // клик по карточке не срабатывает, если это было перетаскивание
-  stageBox.addEventListener('click', e => { if (Math.abs(vel) > 0.6) { e.preventDefault(); } }, true);
+  stageBox.addEventListener('click', e => {
+    if (performance.now() - movedRecently < 250 || Math.abs(vel) > 0.6) e.preventDefault();  // это было перетаскивание
+  }, true);
   function ringFrame() {
     requestAnimationFrame(ringFrame);
     if (!ringVisible) return;

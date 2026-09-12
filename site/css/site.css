@@ -100,7 +100,7 @@ p{margin:0}
 .scrollhint{font:500 .62rem/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
 .scrollhint::before{content:"";width:1px;height:26px;background:linear-gradient(var(--pine),transparent);animation:hint 1.8s ease-in-out infinite}
 @keyframes hint{50%{transform:translateY(6px);opacity:.5}}
-.scard{width:100%;min-width:0;max-width:100%;background:rgba(19,16,13,.5);backdrop-filter:blur(10px) saturate(1.06);-webkit-backdrop-filter:blur(10px) saturate(1.06);border:1px solid var(--line);border-radius:10px;padding:16px 16px 14px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;box-shadow:0 18px 50px rgba(0,0,0,.45);
+.scard{width:100%;min-width:0;max-width:100%;background:rgba(19,16,13,.4);backdrop-filter:blur(10px) saturate(1.06);-webkit-backdrop-filter:blur(10px) saturate(1.06);border:1px solid var(--line);border-radius:10px;padding:16px 16px 14px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;box-shadow:0 18px 50px rgba(0,0,0,.45);
   transition:opacity .45s ease,transform .6s cubic-bezier(.2,.75,.2,1)}
 .anim .scard{opacity:0;transform:translate3d(var(--dx,0),26px,0) scale(.985)}
 .anim .scard.in{opacity:1;transform:none}
@@ -123,6 +123,12 @@ p{margin:0}
 
 /* ---------- телефон: плашки вдвое компактнее и все на одной линии у низа ---------- */
 @media (max-width:899px){
+  /* табличка всегда внизу экрана: на экране она одна, остальные скрыты */
+  .step{align-items:flex-end}
+  .scard{position:fixed;left:12px;right:12px;width:auto;max-width:none;
+    bottom:calc(var(--dock) + var(--safe) + 14px);z-index:6}
+  .anim .scard{pointer-events:none}
+  .anim .scard.in{pointer-events:auto}
   .sec{padding:34px 14px 0}
   .sec-head{gap:8px;margin-bottom:16px}
   .ring-sticky{height:100svh}
@@ -191,8 +197,10 @@ p{margin:0}
 .ring{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform}
 .ring-item{position:absolute;left:50%;top:50%;width:176px;height:246px;margin:-123px 0 0 -88px;transform-style:preserve-3d;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .ring-card{position:relative;width:100%;height:100%;border-radius:10px;overflow:hidden;background:var(--panel-2);border:1px solid var(--line-2);box-shadow:0 24px 60px rgba(0,0,0,.55);display:block;text-decoration:none;color:#fff}
+.ring-hit{position:absolute;inset:0;z-index:1}
+.ring-go{margin-top:8px;width:100%;z-index:2;position:relative;min-height:34px;height:34px;padding:0 10px;font-size:.84rem;border-radius:5px}
 .ring-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.ring-card .cap{position:absolute;left:0;right:0;bottom:0;padding:12px;background:linear-gradient(to top,rgba(0,0,0,.88),rgba(0,0,0,0));display:grid;gap:3px}
+.ring-card .cap{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:12px;background:linear-gradient(to top,rgba(0,0,0,.92),rgba(0,0,0,.25) 70%,rgba(0,0,0,0));display:grid;gap:3px}
 .ring-card b{font:800 1.3rem/1 var(--display);text-transform:uppercase}
 .ring-card em{font:500 .62rem/1.3 var(--mono);font-style:normal;color:var(--pine-2)}
 .ring-card small{font:400 .6rem/1.3 var(--mono);color:#cdbfad}

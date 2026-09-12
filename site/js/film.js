@@ -8,7 +8,7 @@ window.Film = (function () {
   const wideMQ = matchMedia('(min-width: 900px)');
   const HOLD_PART = 0.05;                 // доля ролика, пока дом ещё целый
   const VID = { full: 'assets/film-16x9.mp4', lite: 'assets/film-16x9-lite.mp4', poster: 'assets/film-16x9.jpg', len: 15.63 };
-  const FR = { dir: 'assets/seq9/', n: 167 };
+  const FR = { dir: 'assets/seq9/', n: 250 };
   const pad = i => String(i).padStart(3, '0');
 
   function init(opt) {
