@@ -113,13 +113,20 @@
   if (steps) {
     document.documentElement.classList.add('anim'); // без JS таблички просто видны
     const cards = [...steps.querySelectorAll('.scard')];
+    let beatCard = null;          // на телефоне табличку зажигает ролик, когда доехал до такта
+    document.addEventListener('film:beat', e => {
+      const i = e.detail && e.detail.i;
+      beatCard = i > 0 ? cards[Math.min(cards.length - 1, i - 1)] : null;
+      cards.forEach(c => c.classList.toggle('in', c === beatCard));
+    });
+
     const reveal = () => {
+      if (innerWidth < 900) return;      // телефон ведёт ролик, а не прокрутка
       const h = innerHeight;
       let idx = -1;
       cards.forEach((c, i) => {
         const step = c.closest('.step') || c;
         const r = step.getBoundingClientRect();
-        // табличка выходит, когда её сцена почти прокручена: материал на видео уже улетел
         if (r.top <= -h * 0.85) idx = i;
       });
       cards.forEach((c, i) => c.classList.toggle('in', i === idx));

@@ -345,7 +345,12 @@ body.saw-on input,body.saw-on select,body.saw-on textarea{cursor:auto}
   .topbar{padding:0 28px}
   .step{padding:0 6vw 8vh;align-items:center}
   .step-hero{align-items:flex-end}
-  .scard{width:25vw;min-width:320px;max-width:25vw}
+  /* на десктопе табличка тоже держится на экране, только у своего края */
+  .scard{position:fixed;bottom:7vh;width:25vw;min-width:320px;max-width:25vw;z-index:6}
+  .side-left .scard{left:6vw;right:auto}
+  .side-right .scard{right:6vw;left:auto}
+  .anim .scard{pointer-events:none}
+  .anim .scard.in{pointer-events:auto}
   .step{justify-content:flex-start}
   .side-right{justify-content:flex-end}
   .side-left .scard{--dx:-56px}

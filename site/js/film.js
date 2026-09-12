@@ -9,6 +9,10 @@ window.Film = (function () {
   const HOLD_PART = 0.05;                 // доля ролика, пока дом ещё целый
   const VID = { full: 'assets/film-16x9.mp4', lite: 'assets/film-16x9-lite.mp4', poster: 'assets/film-16x9.jpg', len: 15.63 };
   const FR = { dir: 'assets/seq9/', n: 250 };
+  /* Телефон работает такта́ми, как на energy: свайп ведёт ролик до следующей точки
+     и останавливает ровно на ней, табличка выходит, когда ролик доехал. */
+  const STOPS = [0, 0.16, 0.32, 0.48, 0.63, 0.78, 0.93, 1];
+  const BEAT_MS = 820;
   const pad = i => String(i).padStart(3, '0');
 
   function init(opt) {
@@ -151,10 +155,30 @@ window.Film = (function () {
         pass(4, 4, () => pass(1, 1, null));
       });
 
+      // проезд до такта: кадры бегут с замедлением, как проигранный отрезок
+      let shown = 0, from = 0, to = 0, t0 = 0, raf = 0, beat = -1;
+      const easeOut = t => 1 - Math.pow(1 - t, 3);
+      const frameAt = part => Math.min(FR.n - 1, Math.max(0, Math.round(part * (FR.n - 1))));
+      function run(now) {
+        const t = Math.min(1, (now - t0) / BEAT_MS);
+        shown = from + (to - from) * easeOut(t);
+        paint(frameAt(shown));
+        if (t < 1) raf = requestAnimationFrame(run);
+        else {
+          raf = 0; shown = to;
+          document.dispatchEvent(new CustomEvent('film:beat', { detail: { i: beat } }));
+        }
+      }
       return {
-        set(part) { paint(Math.min(FR.n - 1, Math.max(0, Math.round(part * (FR.n - 1))))); },
+        setBeat(i) {
+          const target = STOPS[Math.min(STOPS.length - 1, Math.max(0, i))];
+          if (i === beat) return;
+          beat = i; from = shown; to = target; t0 = performance.now();
+          if (!raf) raf = requestAnimationFrame(run);
+        },
+        set(part) { shown = part; paint(frameAt(part)); },
         resize: fit,
-        destroy() { wrap.innerHTML = ''; }
+        destroy() { if (raf) cancelAnimationFrame(raf); wrap.innerHTML = ''; }
       };
     }
 
@@ -170,7 +194,12 @@ window.Film = (function () {
 
     function render() {
       const a = partAt();
-      if (active) active.set(a.part);
+      if (active && active.setBeat) {
+        // номер такта = номер сцены, до которой дошла прокрутка
+        const total = Math.max(1, steps.length - 1);
+        const k = Math.min(STOPS.length - 1, Math.round(a.p * total));
+        active.setBeat(k);
+      } else if (active) active.set(a.part);
       const n = Math.max(1, steps.length - 1);
       const sIdx = a.p <= a.hold ? 0 : Math.min(n, Math.floor(((a.p - a.hold) / (1 - a.hold)) * n) + 1);
       const f = a.p <= a.hold ? a.p / a.hold : ((a.p - a.hold) / (1 - a.hold) * n) % 1;
