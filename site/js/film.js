@@ -105,7 +105,7 @@ window.Film = (function () {
       raf = 0;
       const d = want - have;
       if (Math.abs(d) < 0.004) { have = want; }
-      else { have += d * (reduced ? 1 : 0.22); raf = requestAnimationFrame(tick); }
+      else { have += d * (reduced ? 1 : 0.34); raf = requestAnimationFrame(tick); } // кадр идёт следом за пальцем, без остановок на «точках»
       if (!video.seeking) {
         try { video.currentTime = have; } catch (e) {}
       } else if (!raf) raf = requestAnimationFrame(tick);

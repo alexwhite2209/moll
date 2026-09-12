@@ -128,6 +128,25 @@
     addEventListener('load', reveal);
   }
 
+  /* на телефоне свайп доводит до следующей сцены — внутри шапки с роликом */
+  if (steps && !reduced) {
+    const stage = $('#stage');
+    let timer = null, busy = 0;
+    const snapNow = () => {
+      if (innerWidth >= 900 || !stage) return;
+      const h = innerHeight, top = stage.offsetTop;
+      const last = top + stage.offsetHeight - h;
+      if (scrollY < top - 10 || scrollY > last + 10) return;   // ниже сцен не мешаем листать
+      const i = Math.round((scrollY - top) / h);
+      const target = Math.min(last, Math.max(top, top + i * h));
+      if (Math.abs(target - scrollY) > 4 && performance.now() - busy > 400) {
+        busy = performance.now();
+        scrollTo({ top: target, behavior: 'smooth' });
+      }
+    };
+    addEventListener('scroll', () => { clearTimeout(timer); timer = setTimeout(snapNow, 150); }, { passive: true });
+  }
+
   const sceneNo = $('#sceneNo'), sceneBar = $('#sceneBar');
   const stepEls = steps ? [...steps.querySelectorAll('.step')] : [];
   if (window.Film && $('#film')) {
