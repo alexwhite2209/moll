@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Каталог пиломатериалов с ценами — Молл Строй, Нижний Новгород</title>
+<meta name="description" content="Цены на доску, брус, вагонку, блок-хаус, ОСП, фанеру, утеплитель, плёнки и антисептики. Выберите размер — цена обновится, калькулятор посчитает количество. Заказ по телефону +7 (952) 470-47-41.">
+<meta name="theme-color" content="#0f0d0b">
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sofia+Sans+Extra+Condensed:wght@700;800;900&family=Sofia+Sans:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body class="page-catalog">
+<!-- фон: поле частиц (js/particles.js) -->
+<div class="cat-bg" aria-hidden="true"><div class="home-bg-fx" id="homeFx"></div><div class="cat-bg-shade"></div></div>
+
+<header class="topbar solid" id="topbar">
+  <a class="brand" href="index.html" aria-label="Молл Строй — на главную">
+    <span class="brand-badge"><img src="assets/logo.webp" alt="" width="34" height="34"></span>
+    <span class="brand-text"><b>Молл Строй</b><small>пиломатериалы · Нижний Новгород</small></span>
+  </a>
+  <nav class="topnav" aria-label="Разделы сайта"><a href="index.html">Главная</a><a href="#top" aria-current="page">Каталог</a><a href="#contacts">Контакты</a></nav>
+  <a class="icon-btn js-call" href="tel:+79524704741" aria-label="Позвонить: +7 (952) 470-47-41">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>
+  </a>
+</header>
+
+<main id="top">
+  <section class="page-head">
+    <nav class="crumbs" aria-label="Навигация"><a href="index.html">Главная</a><span>›</span><span>Каталог</span></nav>
+    <h1>Каталог и цены</h1>
+    <p id="pageLede">Выберите размер — цена обновится. «Рассчитать» — калькулятор посчитает количество и сумму.</p>
+    <a class="btn btn-line" href="#calc">Перейти к калькулятору</a>
+  </section>
+
+  <nav class="chips" id="chips" aria-label="Категории"></nav>
+  <div class="cat-list" id="catList"></div>
+
+  <section class="sec" id="calc" aria-labelledby="calcTitle">
+    <header class="sec-head">
+      <p class="eyebrow">Калькулятор</p>
+      <h2 id="calcTitle">Сколько нужно материала</h2>
+      <p>Выберите товар и размер, введите площадь, объём или количество. Посчитаем по ценам каталога.</p>
+    </header>
+    <div class="calc" id="calcBox"></div>
+  </section>
+
+  <section class="sec" id="contacts" aria-labelledby="contTitle">
+    <header class="sec-head">
+      <p class="eyebrow">Контакты</p>
+      <h2 id="contTitle">Приезжайте или звоните</h2>
+    </header>
+    <div class="contacts" id="contBox"></div>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>© 2026 Молл Строй. Цены на сайте справочные и не являются публичной офертой — точную сумму, распил и доставку назовёт менеджер по телефону.</p>
+</footer>
+
+<nav class="dock" aria-label="Быстрые действия">
+  <a href="index.html" class="dock-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/></svg>Главная</a>
+  <a href="#calc" class="dock-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm1 3v4h10V5zm0 7v2h2v-2zm4 0v2h2v-2zm4 0v6h2v-6zm-8 4v2h2v-2zm4 0v2h2v-2z"/></svg>Расчёт</a>
+  <a href="tel:+79524704741" class="dock-call js-call"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>Позвонить</a>
+</nav>
+
+<script src="data/catalog.js"></script>
+<script src="data/ceny.js"></script>
+<script src="data/content.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/countup.js"></script>
+<script src="js/gooey.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
