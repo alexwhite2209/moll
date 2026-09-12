@@ -70,7 +70,19 @@ window.Film = (function () {
     addEventListener('touchstart', nudge, { passive: true, once: true });
     addEventListener('scroll', nudge, { passive: true, once: true });
 
-    let want = 0, have = 0, raf = 0, lastStep = -1;
+    let want = 0, pending = null, lastStep = -1;
+
+    /* перемотка кадра — сразу в обработчике прокрутки, без ожидания анимационного кадра */
+    function seek(t) {
+      if (!isFinite(t)) return;
+      if (video.seeking) { pending = t; return; }   // если ещё догоняет — запомним и доедем
+      try { video.currentTime = t; } catch (e) {}
+    }
+    video.addEventListener('seeked', () => {
+      if (pending == null) return;
+      const t = pending; pending = null;
+      if (Math.abs(t - video.currentTime) > 0.01) seek(t);
+    });
 
     function measure() {
       const len = Math.max(1, stage.offsetHeight - sticky.clientHeight);
@@ -90,25 +102,14 @@ window.Film = (function () {
         ? HOLD_PART * (p / hold)
         : HOLD_PART + (1 - HOLD_PART) * ((p - hold) / (1 - hold));
       want = Math.min(dur - 0.05, Math.max(0, part * dur));
+      seek(want);
 
       // номер сцены для индикатора
       const n = Math.max(1, steps.length - 1);
-      const s = p <= hold ? 0 : Math.min(n, Math.floor(((p - hold) / (1 - hold)) * n) + 1);
+      const sIdx = p <= hold ? 0 : Math.min(n, Math.floor(((p - hold) / (1 - hold)) * n) + 1);
       const f = p <= hold ? p / hold : ((p - hold) / (1 - hold) * n) % 1;
-      if (s !== lastStep) { lastStep = s; }
-      onStep(s, f);
-
-      if (!raf) raf = requestAnimationFrame(tick);
-    }
-
-    function tick() {
-      raf = 0;
-      const d = want - have;
-      if (Math.abs(d) < 0.004) { have = want; }
-      else { have += d * (reduced ? 1 : 0.34); raf = requestAnimationFrame(tick); } // кадр идёт следом за пальцем, без остановок на «точках»
-      if (!video.seeking) {
-        try { video.currentTime = have; } catch (e) {}
-      } else if (!raf) raf = requestAnimationFrame(tick);
+      if (sIdx !== lastStep) lastStep = sIdx;
+      onStep(sIdx, f);
     }
 
     addEventListener('scroll', onScroll, { passive: true });
