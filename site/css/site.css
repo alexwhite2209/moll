@@ -120,6 +120,10 @@ p{margin:0}
 
 /* ---------- телефон: плашки вдвое компактнее и все на одной линии у низа ---------- */
 @media (max-width:899px){
+  .sec{padding:34px 14px 0}
+  .sec-head{gap:8px;margin-bottom:16px}
+  .ring-sticky{height:100svh}
+  .ring-hint{top:62px}
   .step{align-items:flex-end;padding-bottom:calc(var(--dock) + var(--safe) + 16px)}
   .anim .scard{transform:translate3d(0,38px,0) scale(.99)}   /* выходит снизу, без наклона в сторону */
   .scard{padding:12px 12px 10px;gap:7px}
@@ -170,13 +174,13 @@ p{margin:0}
 @media (prefers-reduced-motion:reduce){.perks ul{animation:none;flex-wrap:wrap;white-space:normal;width:auto;padding:14px 16px}}
 
 /* ---------- sections ---------- */
-.sec{padding:56px 16px 0;max-width:1100px;margin:0 auto}
+.sec{padding:44px 16px 0;max-width:1100px;margin:0 auto}
 .sec-head{display:grid;gap:10px;margin-bottom:22px}
 .sec-head h2{font-size:clamp(2.5rem,11vw,4rem);text-transform:uppercase}
 .sec-head p{color:var(--muted);font-size:.98rem}
 
 /* ---------- circular gallery (port of 21st.dev CircularGallery) ---------- */
-.ring-sec{position:relative;height:150vh}
+.ring-sec{position:relative;height:100svh}
 .ring-sticky{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;display:grid;place-items:center}
 .ring-hint{position:absolute;top:70px;left:0;right:0;text-align:center;font:500 .62rem/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);z-index:2;padding:0 20px}
 .ring-stage{position:relative;width:100%;height:100%;perspective:1300px;touch-action:pan-y;cursor:grab;user-select:none}
