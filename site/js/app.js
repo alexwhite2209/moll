@@ -129,20 +129,20 @@
       cards.forEach(c => c.classList.toggle('in', c === beatCard));
     });
 
+    // десктоп: момент берём из ролика — табличка встаёт, когда дом стоит в этом материале
+    document.addEventListener('film:part', e => {
+      if (innerWidth < 900) return;
+      const S = (window.Film && Film.STOPS) || [];
+      const part = e.detail.part;
+      let idx = 0;
+      for (let i = 1; i < S.length; i++) if (part >= S[i] - 0.004) idx = i;
+      const c = (idx > 0 && !stageGone()) ? cards[Math.min(cards.length - 1, idx - 1)] : null;
+      cards.forEach(x => x.classList.toggle('in', x === c));
+    });
+
     const reveal = () => {
       if (stageGone()) { cards.forEach(c => c.classList.remove('in')); return; }
-      if (innerWidth < 900) {                       // телефон: табличку ведёт ролик
-        if (beatCard) cards.forEach(c => c.classList.toggle('in', c === beatCard));
-        return;
-      }
-      const h = innerHeight;
-      let idx = -1;
-      cards.forEach((c, i) => {
-        const step = c.closest('.step') || c;
-        const r = step.getBoundingClientRect();
-        if (r.top <= -h * 0.85) idx = i;
-      });
-      cards.forEach((c, i) => c.classList.toggle('in', i === idx));
+      if (innerWidth < 900 && beatCard) cards.forEach(c => c.classList.toggle('in', c === beatCard));
     };
     ['scroll', 'resize', 'wheel', 'touchmove', 'orientationchange'].forEach(ev => addEventListener(ev, reveal, { passive: true }));
     if (window.IntersectionObserver) {
@@ -153,23 +153,32 @@
     addEventListener('load', reveal);
   }
 
-  /* на телефоне свайп доводит до следующей сцены — внутри шапки с роликом */
+  /* на телефоне даже короткий свайп переводит на следующую сцену */
   if (steps && !reduced) {
     const stage = $('#stage');
-    let timer = null, busy = 0;
+    let timer = null, busy = 0, cur = 0;
     const snapNow = () => {
       if (innerWidth >= 900 || !stage) return;
       const h = innerHeight, top = stage.offsetTop;
       const last = top + stage.offsetHeight - h;
-      if (scrollY < top - 10 || scrollY > last + 10) return;   // ниже сцен не мешаем листать
-      const i = Math.round((scrollY - top) / h);
-      const target = Math.min(last, Math.max(top, top + i * h));
-      if (Math.abs(target - scrollY) > 4 && performance.now() - busy > 400) {
+      const maxStep = Math.max(0, Math.round((last - top) / h));
+      if (scrollY < top - 10 || scrollY > last + 10) {       // вне шапки не мешаем листать
+        cur = Math.max(0, Math.min(maxStep, Math.round((scrollY - top) / h)));
+        return;
+      }
+      const rel = (scrollY - top) / h, d = rel - cur;
+      let next = cur;
+      if (d > 0.07) next = cur + 1;                          // короткого свайпа достаточно
+      else if (d < -0.07) next = cur - 1;
+      next = Math.max(0, Math.min(maxStep, next));
+      cur = next;
+      const target = Math.min(last, Math.max(top, top + next * h));
+      if (Math.abs(target - scrollY) > 4 && performance.now() - busy > 380) {
         busy = performance.now();
         scrollTo({ top: target, behavior: 'smooth' });
       }
     };
-    addEventListener('scroll', () => { clearTimeout(timer); timer = setTimeout(snapNow, 150); }, { passive: true });
+    addEventListener('scroll', () => { clearTimeout(timer); timer = setTimeout(snapNow, 110); }, { passive: true });
   }
 
   const sceneNo = $('#sceneNo'), sceneBar = $('#sceneBar');

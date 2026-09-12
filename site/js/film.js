@@ -11,9 +11,10 @@ window.Film = (function () {
   const FR = { dir: 'assets/seq9/', n: 250 };
   /* Телефон работает такта́ми, как на energy: свайп ведёт ролик до следующей точки
      и останавливает ровно на ней, табличка выходит, когда ролик доехал. */
-  /* точки остановки по кадрам ролика: дом целый → отделка снята → мембрана → ОСП →
-     утеплитель → плёнка и вагонка → каркас поднимается → штабеля сложены */
-  const STOPS = [0, 0.16, 0.32, 0.46, 0.54, 0.64, 0.75, 0.93];
+  /* точки остановки: дом стоит В ТОМ материале, про который табличка.
+     кадр 10 — дом в блок-хаусе, 60 — белый под мембраной, 95 — в ОСП,
+     130 — в утеплителе, 150 — плёнка и вагонка, 170 — голый каркас, 232 — штабеля */
+  const STOPS = [0, 0.04, 0.24, 0.38, 0.52, 0.60, 0.68, 0.93];
   const BEAT_MS = 820;
   const pad = i => String(i).padStart(3, '0');
 
@@ -206,7 +207,11 @@ window.Film = (function () {
         const total = Math.max(1, steps.length - 1);
         const k = Math.min(STOPS.length - 1, Math.round(a.p * total));
         active.setBeat(k);
-      } else if (active) active.set(a.part);
+      } else if (active) {
+        active.set(a.part);
+        // десктоп: таблички берут момент прямо из ролика, по тем же точкам
+        document.dispatchEvent(new CustomEvent('film:part', { detail: { part: a.part } }));
+      }
       const n = Math.max(1, steps.length - 1);
       const sIdx = a.p <= a.hold ? 0 : Math.min(n, Math.floor(((a.p - a.hold) / (1 - a.hold)) * n) + 1);
       const f = a.p <= a.hold ? a.p / a.hold : ((a.p - a.hold) / (1 - a.hold) * n) % 1;
@@ -234,5 +239,5 @@ window.Film = (function () {
     return ready;
   }
 
-  return { init };
+  return { init, STOPS };
 })();
