@@ -140,13 +140,12 @@
       cards.forEach(x => x.classList.toggle('in', x === c));
     });
 
-    // финальная надпись уходит вверх вместе с последним кадром, а не висит поверх
+    // финальную надпись кладём внутрь самого кадра: она приклеена к картинке
+    // и уходит вверх вместе с ней, без догоняющей анимации
     const slate = steps.querySelector('.slate');
-    const slideSlate = () => {
-      if (!slate || !stageSec) return;
-      const over = stageSec.getBoundingClientRect().bottom - innerHeight;
-      slate.style.setProperty('--exit', Math.min(0, over).toFixed(0) + 'px');
-    };
+    const sticky = $('#stageSticky');
+    if (slate && sticky) sticky.appendChild(slate);
+    const slideSlate = () => {};
 
     const reveal = () => {
       slideSlate();
@@ -162,32 +161,48 @@
     addEventListener('load', reveal);
   }
 
-  /* на телефоне даже короткий свайп переводит на следующую сцену */
+  /* на телефоне один свайп = одна сцена: считаем от точки покоя, во время доводки
+     события прокрутки не слушаем — иначе кадр то откатывался назад, то прыгал через две */
   if (steps && !reduced) {
     const stage = $('#stage');
-    let timer = null, busy = 0, cur = 0;
-    const snapNow = () => {
-      if (innerWidth >= 900 || !stage) return;
+    let cur = 0, restY = 0, moving = false, timer = null, release = null;
+    const geom = () => {
       const h = innerHeight, top = stage.offsetTop;
       const last = top + stage.offsetHeight - h;
-      const maxStep = Math.max(0, Math.round((last - top) / h));
-      if (scrollY < top - 10 || scrollY > last + 10) {       // вне шапки не мешаем листать
-        cur = Math.max(0, Math.min(maxStep, Math.round((scrollY - top) / h)));
+      return { h, top, last, maxStep: Math.max(0, Math.round((last - top) / h)) };
+    };
+    const goTo = i => {
+      const g = geom();
+      cur = Math.max(0, Math.min(g.maxStep, i));
+      const target = Math.min(g.last, Math.max(g.top, g.top + cur * g.h));
+      moving = true;
+      clearTimeout(release);
+      scrollTo({ top: target, behavior: 'smooth' });
+      release = setTimeout(() => {
+        // если плавная прокрутка не сработала (браузер её глушит) — доводим рывком
+        if (Math.abs(scrollY - target) > 8) scrollTo({ top: target });
+        moving = false; restY = scrollY;
+      }, 560);
+    };
+    const settle = () => {
+      if (innerWidth >= 900 || !stage || moving) return;
+      const g = geom();
+      if (scrollY < g.top - 10 || scrollY > g.last + 10) {   // вне шапки листаем как обычно
+        cur = Math.max(0, Math.min(g.maxStep, Math.round((scrollY - g.top) / g.h)));
+        restY = scrollY;
         return;
       }
-      const rel = (scrollY - top) / h, d = rel - cur;
-      let next = cur;
-      if (d > 0.07) next = cur + 1;                          // короткого свайпа достаточно
-      else if (d < -0.07) next = cur - 1;
-      next = Math.max(0, Math.min(maxStep, next));
-      cur = next;
-      const target = Math.min(last, Math.max(top, top + next * h));
-      if (Math.abs(target - scrollY) > 4 && performance.now() - busy > 380) {
-        busy = performance.now();
-        scrollTo({ top: target, behavior: 'smooth' });
-      }
+      const d = (scrollY - restY) / g.h;
+      if (d > 0.06) goTo(cur + 1);
+      else if (d < -0.06) goTo(cur - 1);
+      else if (Math.abs(scrollY - (g.top + cur * g.h)) > 4) goTo(cur);
     };
-    addEventListener('scroll', () => { clearTimeout(timer); timer = setTimeout(snapNow, 110); }, { passive: true });
+    addEventListener('scroll', () => {
+      if (moving) return;
+      clearTimeout(timer); timer = setTimeout(settle, 90);
+    }, { passive: true });
+    addEventListener('load', () => { restY = scrollY; });
+    restY = scrollY;
   }
 
   const sceneNo = $('#sceneNo'), sceneBar = $('#sceneBar');
