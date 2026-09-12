@@ -6,8 +6,10 @@ window.Film = (function () {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const wide = matchMedia('(min-width: 900px)');
   const SRC = { wide: 'assets/film-16x9.mp4', tall: 'assets/film-9x16.mp4' };
+  const LITE = { wide: 'assets/film-16x9-lite.mp4', tall: 'assets/film-9x16-lite.mp4' }; // лёгкий ролик грузится первым
   const POSTER = { wide: 'assets/film-16x9.jpg', tall: 'assets/film-9x16.jpg' };
   const HOLD_PART = 0.05; // какая доля ролика проходит, пока дом ещё целый
+  const LEN = { wide: 15.63, tall: 16.67 }; // длина роликов — чтобы скролл работал, не дожидаясь загрузки
 
   function init(opt) {
     const video = opt.video, stage = opt.stage, sticky = opt.sticky;
@@ -18,7 +20,7 @@ window.Film = (function () {
 
     let mode = wide.matches ? 'wide' : 'tall';
     video.poster = POSTER[mode];
-    video.src = SRC[mode];
+    video.src = LITE[mode];
     video.muted = true; video.loop = false; video.playsInline = true;
     video.setAttribute('playsinline', ''); video.setAttribute('muted', '');
     video.preload = 'auto';
@@ -31,7 +33,7 @@ window.Film = (function () {
       mode = next;
       const at = video.currentTime;
       video.poster = POSTER[mode];
-      video.src = SRC[mode];
+      video.src = full && full.ready ? SRC[mode] : LITE[mode];
       video.load();
       video.addEventListener('loadedmetadata', () => { try { video.currentTime = at; } catch (e) {} }, { once: true });
     };
@@ -51,12 +53,12 @@ window.Film = (function () {
 
     const ready = new Promise(resolve => {
       const done = () => { onProgress(1); resolve(); };
-      if (video.readyState >= 2) done();
+      if (video.readyState >= 1) done();
       else {
-        // хватит первых кадров: дальше ролик догружается сам, пока читаются надписи
+        // не держим страницу из-за ролика: он догрузится сам, а перемотка уже работает
+        video.addEventListener('loadedmetadata', done, { once: true });
         video.addEventListener('loadeddata', done, { once: true });
-        video.addEventListener('canplaythrough', done, { once: true });
-        setTimeout(done, 8000); // не держим посетителя, если сеть медленная
+        setTimeout(done, 2500);
       }
     });
 
@@ -70,11 +72,39 @@ window.Film = (function () {
     addEventListener('touchstart', nudge, { passive: true, once: true });
     addEventListener('scroll', nudge, { passive: true, once: true });
 
+    /* полный ролик грузим вторым слоем и плавно показываем, когда он готов */
+    let full = null;
+    function loadFull() {
+      const hi = document.createElement('video');
+      hi.className = 'film film-hi';
+      hi.muted = true; hi.loop = false; hi.playsInline = true;
+      hi.setAttribute('playsinline', ''); hi.setAttribute('muted', '');
+      hi.preload = 'auto';
+      hi.src = SRC[mode];
+      hi.ready = false;
+      video.parentNode.insertBefore(hi, video.nextSibling);
+      const show = () => {
+        if (hi.ready) return;
+        hi.ready = true;
+        try { hi.currentTime = video.currentTime; } catch (e) {}
+        hi.classList.add('on');
+      };
+      hi.addEventListener('canplaythrough', show, { once: true });
+      hi.addEventListener('progress', () => {
+        try {
+          if (hi.buffered.length && hi.duration && hi.buffered.end(hi.buffered.length - 1) > hi.duration * 0.9) show();
+        } catch (e) {}
+      });
+      hi.load();
+      full = hi;
+    }
+
     let want = 0, pending = null, lastStep = -1;
 
     /* перемотка кадра — сразу в обработчике прокрутки, без ожидания анимационного кадра */
     function seek(t) {
       if (!isFinite(t)) return;
+      if (full && full.ready && !full.seeking) { try { full.currentTime = t; } catch (e) {} }
       if (video.seeking) { pending = t; return; }   // если ещё догоняет — запомним и доедем
       try { video.currentTime = t; } catch (e) {}
     }
@@ -93,7 +123,7 @@ window.Film = (function () {
     addEventListener('resize', () => { box = measure(); onScroll(); }, { passive: true });
 
     function onScroll() {
-      const dur = video.duration || 0;
+      const dur = video.duration || LEN[mode] || 0;   // пока метаданные не пришли — считаем по известной длине
       if (!dur) return;
       const p = Math.min(1, Math.max(0, (scrollY - box.top) / box.len));
       const heroH = steps.length ? steps[0].offsetHeight : 0;
@@ -113,6 +143,9 @@ window.Film = (function () {
     }
 
     addEventListener('scroll', onScroll, { passive: true });
+    // тяжёлый файл начинаем тянуть, когда лёгкий уже показывает кадры
+    video.addEventListener('loadeddata', () => { if (!full) setTimeout(loadFull, 400); }, { once: true });
+    setTimeout(() => { if (!full) loadFull(); }, 4000);
     video.addEventListener('loadedmetadata', () => { box = measure(); onScroll(); });
     ready.then(() => { box = measure(); onScroll(); });
 
