@@ -70,6 +70,7 @@ p{margin:0}
 .steps{position:relative;z-index:5;margin-top:-100vh;margin-top:-100svh}
 .step{min-height:100vh;min-height:100svh;display:flex;align-items:flex-end;padding:0 12px calc(var(--dock) + var(--safe) + 14px);pointer-events:none}
 .step > *{pointer-events:auto;min-width:0;max-width:100%}
+.step-pad{min-height:100vh;min-height:100svh;pointer-events:none}
 .step-hero .hero{display:grid;gap:14px;padding:0 4px}
 .step-hero .eyebrow{display:none}
 .hero h1{font-size:clamp(3rem,15vw,5.6rem);font-weight:900;text-transform:uppercase;line-height:.86}
@@ -104,6 +105,9 @@ p{margin:0}
   transition:opacity .45s ease,transform .6s cubic-bezier(.2,.75,.2,1)}
 .anim .scard{opacity:0;transform:translate3d(var(--dx,0),26px,0) scale(.985)}
 .anim .scard.in{opacity:1;transform:none}
+/* уходящая исчезает быстрее, приходящая чуть задерживается — не наслаиваются */
+.anim .scard{transition:opacity .28s ease,transform .38s cubic-bezier(.2,.75,.2,1)}
+.anim .scard.in{transition:opacity .42s ease .12s,transform .55s cubic-bezier(.2,.75,.2,1) .12s}
 .side-left .scard{--dx:-28px}
 .side-right .scard{--dx:28px}
 @media (prefers-reduced-motion:reduce){.anim .scard{transform:none}.scard{transition:opacity .2s linear}}

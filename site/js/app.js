@@ -105,6 +105,8 @@
       Gooey.cycle(art.querySelector('.morph'), names.length ? names : [catName(s.cat).split(':')[0]], { morphTime: 0.9, cooldownTime: 1.1 });
     }
   });
+  // пустой экран в конце: таблички выходят на сцену позже видео, последней нужен запас
+  if (steps) steps.appendChild(el('article', 'step step-pad'));
   if (steps) scanCU(steps);
 
   /* таблички не выезжают снизу, а прилетают со своей стороны */
@@ -112,14 +114,15 @@
     document.documentElement.classList.add('anim'); // без JS таблички просто видны
     const cards = [...steps.querySelectorAll('.scard')];
     const reveal = () => {
-      const h = innerHeight, line = h * 0.75;   // как только сцена дошла до этой линии — её табличка на экране
-      let best = null;
-      cards.forEach(c => {
+      const h = innerHeight;
+      let idx = -1;
+      cards.forEach((c, i) => {
         const step = c.closest('.step') || c;
         const r = step.getBoundingClientRect();
-        if (r.top <= line && r.bottom > h * 0.2) best = c;   // берём последнюю подходящую
+        // табличка выходит, когда её сцена почти прокручена: материал на видео уже улетел
+        if (r.top <= -h * 0.85) idx = i;
       });
-      cards.forEach(c => c.classList.toggle('in', c === best));
+      cards.forEach((c, i) => c.classList.toggle('in', i === idx));
     };
     ['scroll', 'resize', 'wheel', 'touchmove', 'orientationchange'].forEach(ev => addEventListener(ev, reveal, { passive: true }));
     if (window.IntersectionObserver) {
@@ -272,15 +275,19 @@
   let manual = false, drag = null, vel = 0;
   const onDown = e => {
     if (e.button != null && e.button !== 0) return;
-    drag = { x: e.clientX, rot: ringRot, t: performance.now(), moved: 0 };
+    drag = { x: e.clientX, rot: ringRot, t: performance.now(), moved: 0, id: e.pointerId, cap: false };
     vel = 0; manual = true; scrolling = true;
     stageBox.classList.add('dragging');
-    stageBox.setPointerCapture && e.pointerId != null && stageBox.setPointerCapture(e.pointerId);
+    // захват указателя ставим только когда палец реально поехал, иначе он съедает клик по кнопке
   };
   const onMove = e => {
     if (!drag) return;
     const dx = e.clientX - drag.x;
     drag.moved = Math.abs(dx);
+    if (!drag.cap && drag.moved > 6 && stageBox.setPointerCapture && drag.id != null) {
+      try { stageBox.setPointerCapture(drag.id); drag.cap = true; } catch (err) {}
+    }
+    if (drag.moved <= 6) return;   // мелкое дрожание — это не перетаскивание
     const now = performance.now(), dt = Math.max(8, now - drag.t);
     const next = drag.rot - dx * 0.42;
     vel = (next - ringRot) / dt * 16;
@@ -291,6 +298,9 @@
     if (!drag) return;
     const wasDrag = drag.moved > 8;
     if (wasDrag) movedRecently = performance.now();
+    if (drag.cap && stageBox.releasePointerCapture && drag.id != null) {
+      try { stageBox.releasePointerCapture(drag.id); } catch (err) {}
+    }
     drag = null;
     stageBox.classList.remove('dragging');
     scrolling = false;
