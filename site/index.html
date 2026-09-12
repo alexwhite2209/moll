@@ -11,8 +11,8 @@
 <meta property="og:description" content="Весь дом на одном складе: доска, брус, утеплитель, плёнки. Цены и калькулятор.">
 <meta property="og:image" content="assets/logo.png">
 <link rel="preload" href="assets/logo.webp" as="image">
-<link rel="preload" href="assets/film-9x16.jpg" as="image" media="(max-width: 899px)">
-<link rel="preload" href="assets/film-16x9.jpg" as="image" media="(min-width: 900px)">
+<link rel="preload" href="assets/seq9/001.jpg" as="image" media="(max-width: 899px)">
+<link rel="preload" href="assets/seq16/001.jpg" as="image" media="(min-width: 900px)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sofia+Sans+Extra+Condensed:wght@700;800;900&family=Sofia+Sans:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap">
@@ -67,7 +67,7 @@
 <main id="top">
   <section class="stage" id="stage" aria-label="Дом разбирается на материалы из каталога">
     <div class="stage-sticky" id="stageSticky">
-      <video id="film" class="film" aria-hidden="true" muted playsinline preload="auto" disablepictureinpicture poster="assets/film-9x16.jpg"></video>
+      <div id="film" class="film" aria-hidden="true"></div><!-- js/film.js подменяет на canvas со кадрами ролика -->
       <div class="stage-shade" aria-hidden="true"></div>
       <div class="stage-hud" aria-hidden="true"><span id="sceneNo">01/07</span><i id="sceneBar"></i></div>
     </div>
