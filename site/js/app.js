@@ -113,15 +113,28 @@
   if (steps) {
     document.documentElement.classList.add('anim'); // без JS таблички просто видны
     const cards = [...steps.querySelectorAll('.scard')];
+    const stageSec = $('#stage');
+    // ушла шапка с экрана — таблички уходят вместе с последним кадром
+    const stageGone = () => {
+      if (!stageSec) return false;
+      const r = stageSec.getBoundingClientRect();
+      return r.bottom < innerHeight * 0.5 || r.top > innerHeight;
+    };
+
     let beatCard = null;          // на телефоне табличку зажигает ролик, когда доехал до такта
     document.addEventListener('film:beat', e => {
       const i = e.detail && e.detail.i;
       beatCard = i > 0 ? cards[Math.min(cards.length - 1, i - 1)] : null;
+      if (stageGone()) beatCard = null;
       cards.forEach(c => c.classList.toggle('in', c === beatCard));
     });
 
     const reveal = () => {
-      if (innerWidth < 900) return;      // телефон ведёт ролик, а не прокрутка
+      if (stageGone()) { cards.forEach(c => c.classList.remove('in')); return; }
+      if (innerWidth < 900) {                       // телефон: табличку ведёт ролик
+        if (beatCard) cards.forEach(c => c.classList.toggle('in', c === beatCard));
+        return;
+      }
       const h = innerHeight;
       let idx = -1;
       cards.forEach((c, i) => {

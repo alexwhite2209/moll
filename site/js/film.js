@@ -11,7 +11,9 @@ window.Film = (function () {
   const FR = { dir: 'assets/seq9/', n: 250 };
   /* Телефон работает такта́ми, как на energy: свайп ведёт ролик до следующей точки
      и останавливает ровно на ней, табличка выходит, когда ролик доехал. */
-  const STOPS = [0, 0.16, 0.32, 0.48, 0.63, 0.78, 0.93, 1];
+  /* точки остановки по кадрам ролика: дом целый → отделка снята → мембрана → ОСП →
+     утеплитель → плёнка и вагонка → каркас поднимается → штабеля сложены */
+  const STOPS = [0, 0.16, 0.32, 0.46, 0.54, 0.64, 0.75, 0.93];
   const BEAT_MS = 820;
   const pad = i => String(i).padStart(3, '0');
 
@@ -156,18 +158,20 @@ window.Film = (function () {
       });
 
       // проезд до такта: кадры бегут с замедлением, как проигранный отрезок
-      let shown = 0, from = 0, to = 0, t0 = 0, raf = 0, beat = -1;
+      let shown = 0, from = 0, to = 0, t0 = 0, raf = 0, beat = -1, safety = 0, landed = -1;
       const easeOut = t => 1 - Math.pow(1 - t, 3);
       const frameAt = part => Math.min(FR.n - 1, Math.max(0, Math.round(part * (FR.n - 1))));
+      function land() {                       // доехали: ставим точный кадр и зовём табличку
+        if (landed === beat) return;
+        landed = beat; shown = to; paint(frameAt(to));
+        document.dispatchEvent(new CustomEvent('film:beat', { detail: { i: beat } }));
+      }
       function run(now) {
         const t = Math.min(1, (now - t0) / BEAT_MS);
         shown = from + (to - from) * easeOut(t);
         paint(frameAt(shown));
         if (t < 1) raf = requestAnimationFrame(run);
-        else {
-          raf = 0; shown = to;
-          document.dispatchEvent(new CustomEvent('film:beat', { detail: { i: beat } }));
-        }
+        else { raf = 0; land(); }
       }
       return {
         setBeat(i) {
@@ -175,10 +179,13 @@ window.Film = (function () {
           if (i === beat) return;
           beat = i; from = shown; to = target; t0 = performance.now();
           if (!raf) raf = requestAnimationFrame(run);
+          // предохранитель: если браузер придушил кадры, всё равно доезжаем и зажигаем табличку
+          clearTimeout(safety);
+          safety = setTimeout(land, BEAT_MS + 260);
         },
         set(part) { shown = part; paint(frameAt(part)); },
         resize: fit,
-        destroy() { if (raf) cancelAnimationFrame(raf); wrap.innerHTML = ''; }
+        destroy() { if (raf) cancelAnimationFrame(raf); clearTimeout(safety); wrap.innerHTML = ''; }
       };
     }
 
