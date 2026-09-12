@@ -128,25 +128,6 @@
     addEventListener('load', reveal);
   }
 
-  /* на телефоне один свайп = одна табличка: доводим до края сцены только внутри шапки */
-  if (steps && !reduced) {
-    const stage = $('#stage');
-    let timer = null, busy = 0;
-    const snapNow = () => {
-      if (innerWidth >= 900 || !stage) return;
-      const h = innerHeight, top = stage.offsetTop;
-      const last = top + stage.offsetHeight - h;
-      if (scrollY < top - 10 || scrollY > last + 10) return;   // ниже сцен не мешаем листать
-      const i = Math.round((scrollY - top) / h);
-      const target = Math.min(last, Math.max(top, top + i * h));
-      if (Math.abs(target - scrollY) > 4 && performance.now() - busy > 400) {
-        busy = performance.now();
-        scrollTo({ top: target, behavior: 'smooth' });
-      }
-    };
-    addEventListener('scroll', () => { clearTimeout(timer); timer = setTimeout(snapNow, 150); }, { passive: true });
-  }
-
   const sceneNo = $('#sceneNo'), sceneBar = $('#sceneBar');
   const stepEls = steps ? [...steps.querySelectorAll('.step')] : [];
   if (window.Film && $('#film')) {
@@ -257,10 +238,52 @@
     ringItems.forEach((it, i) => { it.dataset.a = i * ang; it.style.transform = `rotateY(${i * ang}deg) translateZ(${radius}px)`; });
   }
   function ringScroll() {
+    if (manual) return;                       // как только потянули рукой — скролл кольцо не крутит
     const r = ringSec.getBoundingClientRect(), total = Math.max(1, ringSec.offsetHeight - innerHeight);
     ringRot = Math.min(1, Math.max(0, -r.top / total)) * 360;
     scrolling = true; clearTimeout(scrollTimer); scrollTimer = setTimeout(() => { scrolling = false; }, 150);
   }
+
+  /* кольцо тянется пальцем и мышкой влево-вправо, с инерцией */
+  const stageBox = ringBox.parentElement;
+  let manual = false, drag = null, vel = 0;
+  const onDown = e => {
+    if (e.button != null && e.button !== 0) return;
+    drag = { x: e.clientX, rot: ringRot, t: performance.now(), moved: 0 };
+    vel = 0; manual = true; scrolling = true;
+    stageBox.classList.add('dragging');
+    stageBox.setPointerCapture && e.pointerId != null && stageBox.setPointerCapture(e.pointerId);
+  };
+  const onMove = e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    drag.moved = Math.abs(dx);
+    const now = performance.now(), dt = Math.max(8, now - drag.t);
+    const next = drag.rot - dx * 0.42;
+    vel = (next - ringRot) / dt * 16;
+    ringRot = next; drag.t = now;
+  };
+  const onUp = e => {
+    if (!drag) return;
+    const wasDrag = drag.moved > 6;
+    drag = null;
+    stageBox.classList.remove('dragging');
+    scrolling = false;
+    if (wasDrag && e && e.cancelable) e.preventDefault();
+    inertia();
+  };
+  function inertia() {
+    if (Math.abs(vel) < 0.05) { vel = 0; return; }
+    ringRot += vel; vel *= 0.94;
+    requestAnimationFrame(inertia);
+  }
+  stageBox.addEventListener('pointerdown', onDown);
+  stageBox.addEventListener('pointermove', onMove, { passive: true });
+  stageBox.addEventListener('pointerup', onUp);
+  stageBox.addEventListener('pointercancel', onUp);
+  stageBox.addEventListener('pointerleave', onUp);
+  // клик по карточке не срабатывает, если это было перетаскивание
+  stageBox.addEventListener('click', e => { if (Math.abs(vel) > 0.6) { e.preventDefault(); } }, true);
   function ringFrame() {
     requestAnimationFrame(ringFrame);
     if (!ringVisible) return;
