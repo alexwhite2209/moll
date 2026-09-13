@@ -2,7 +2,7 @@
    Компьютер: ролик перематывается прокруткой. Сглаживание и шлюз на seek — перемотки не
    встают в очередь; подписи получают тот же сглаженный прогресс, что и кадр.
    Телефон: такты. Один свайп — сразу следующая табличка; вперёд ролик проигрывается и
-   встаёт ровно на точке, назад идёт ступенями по файлу, где каждый кадр опорный. */
+   встаёт ровно на точке, назад идёт ступенями по файлу с частыми опорными кадрами. */
 window.Film = (function () {
   'use strict';
   const BEATS_MQ = matchMedia('(max-width: 899px), (orientation: portrait) and (pointer: coarse)');
@@ -10,7 +10,7 @@ window.Film = (function () {
   const coarse = matchMedia('(pointer: coarse)').matches;
   const SRC = {
     wide: { lite: 'assets/film-16x9-lite.mp4', full: 'assets/film-16x9.mp4', poster: 'assets/film-16x9.jpg' },
-    tall: { lite: 'assets/film-9x16-intra.mp4', full: null, poster: 'assets/film-9x16.jpg' }
+    tall: { lite: 'assets/film-9x16.mp4', full: null, poster: 'assets/film-9x16.jpg' }   // 720×1280, опорный кадр каждые 6
   };
   const FRAME = 1 / 30;
   const SEEK_MIN = coarse ? FRAME * 1.6 : FRAME * 0.9;   // короче кадра перематывать незачем
