@@ -67,11 +67,9 @@
   }
 
   /* ---------- scene captions (home page) ---------- */
-  const steps = $('#steps');
-  if (steps) C.scenes.forEach((s, i) => {
-    const n = i + 1;
-    const art = el('article', 'step side-' + (s.side || 'left') + (s.final ? ' step-final' : ''));
-    art.dataset.step = n;
+  const bandsBox = $('#bands');
+  if (bandsBox) C.scenes.forEach(s => {
+    const art = el('div', 'band' + (s.side === 'right' ? ' right' : '') + (s.final ? ' band-slate' : ''));
     let rows = '';
     if (s.show) rows = '<div class="rows">' + s.show.map(id => byId[id]).filter(Boolean)
       .map(p => `<div><span>${esc(p.name)}</span><span>${rangeCU(p)}<small> / ${p.unit}</small></span></div>`).join('') + '</div>';
@@ -94,129 +92,90 @@
       art.innerHTML = `<div class="scard"><div class="top"><span class="eyebrow">${kicker}</span><span class="eyebrow">в наличии</span></div>
       <h2>${esc(s.title)}</h2><p class="morph"></p><p>${esc(s.text)}</p>${rows}<div class="acts">${acts}</div></div>`;
     }
-    steps.appendChild(art);
+    bandsBox.appendChild(art);
 
     // текст на карточке: заголовок собирается из размытия, под ним перетекают названия материалов
     if (window.Gooey) {
-      if (!s.final) Gooey.reveal(art.querySelector('h2')); // у заставки заголовок выходит по словам
+      if (!s.final) art._reveal = Gooey.reveal(art.querySelector('h2'), { manual: true }); // у заставки заголовок выходит по словам
       const names = s.final
         ? ['Доска', 'Брус', 'Вагонка', 'ОСП', 'Фанера', 'Утеплитель', 'Плёнки']
         : (s.show || []).map(id => byId[id]).filter(Boolean).map(p => shortName(p.name));
       Gooey.cycle(art.querySelector('.morph'), names.length ? names : [catName(s.cat).split(':')[0]], { morphTime: 0.9, cooldownTime: 1.1 });
     }
   });
-  // пустой экран в конце: таблички выходят на сцену позже видео, последней нужен запас
-  if (steps) steps.appendChild(el('article', 'step step-pad'));
-  if (steps) scanCU(steps);
+  if (bandsBox) scanCU(bandsBox);
 
-  /* таблички не выезжают снизу, а прилетают со своей стороны */
-  if (steps) {
-    document.documentElement.classList.add('anim'); // без JS таблички просто видны
-    const cards = [...steps.querySelectorAll('.scard')];
-    const stageSec = $('#stage');
-    // ушла шапка с экрана — таблички уходят вместе с последним кадром
-    const stageGone = () => {
-      if (!stageSec) return false;
-      const r = stageSec.getBoundingClientRect();
-      return r.bottom < innerHeight * 0.05 || r.top > innerHeight;   // держим до тех пор, пока кадр на экране
-    };
-
-    let beatCard = null;          // на телефоне табличку зажигает ролик, когда доехал до такта
-    document.addEventListener('film:beat', e => {
-      const i = e.detail && e.detail.i;
-      beatCard = i > 0 ? cards[Math.min(cards.length - 1, i - 1)] : null;
-      if (stageGone()) beatCard = null;
-      cards.forEach(c => c.classList.toggle('in', c === beatCard));
-    });
-
-    // десктоп: момент берём из ролика — табличка встаёт, когда дом стоит в этом материале
-    document.addEventListener('film:part', e => {
-      if (innerWidth < 900) return;
-      const S = (window.Film && Film.STOPS) || [];
-      const part = e.detail.part;
-      let idx = 0;
-      for (let i = 1; i < S.length; i++) if (part >= S[i] - 0.004) idx = i;
-      const c = (idx > 0 && !stageGone()) ? cards[Math.min(cards.length - 1, idx - 1)] : null;
-      cards.forEach(x => x.classList.toggle('in', x === c));
-    });
-
-    // финальную надпись кладём внутрь самого кадра: она приклеена к картинке
-    // и уходит вверх вместе с ней, без догоняющей анимации
-    const slate = steps.querySelector('.slate');
-    const sticky = $('#stageSticky');
-    if (slate && sticky) sticky.appendChild(slate);
-    const slideSlate = () => {};
-
-    const reveal = () => {
-      slideSlate();
-      if (stageGone()) { cards.forEach(c => c.classList.remove('in')); return; }
-      if (innerWidth < 900 && beatCard) cards.forEach(c => c.classList.toggle('in', c === beatCard));
-    };
-    ['scroll', 'resize', 'wheel', 'touchmove', 'orientationchange'].forEach(ev => addEventListener(ev, reveal, { passive: true }));
-    if (window.IntersectionObserver) {
-      const io = new IntersectionObserver(reveal, { threshold: [0, 0.2, 0.5, 0.9] });
-      cards.forEach(c => io.observe(c));
-    }
-    reveal();
-    addEventListener('load', reveal);
+  /* Подписи-полосы, как на energy. Каждая лежит внутри кадра, поэтому уходит вверх вместе с ним.
+     a–b — отрезок прокрутки на компьютере (горизонтальный ролик),
+     m — точка, где встаёт такт на телефоне (вертикальный ролик).
+     Всё выставлено по кадрам: подпись горит, пока дом стоит в этом материале. */
+  const TIMING = [
+    { a: 0,     b: 0.083, m: 0     },   // дом целый — заголовок сайта
+    { a: 0.087, b: 0.198, m: 0.045 },   // дом в блок-хаусе
+    { a: 0.202, b: 0.393, m: 0.27  },   // белый, под мембраной
+    { a: 0.397, b: 0.498, m: 0.35  },   // в ОСП
+    { a: 0.502, b: 0.573, m: 0.45  },   // в утеплителе
+    { a: 0.577, b: 0.663, m: 0.56  },   // плёнка и вагонка
+    { a: 0.667, b: 0.878, m: 0.70  },   // каркас поднимается — доска и брус
+    { a: 0.882, b: 1,     m: 0.985 }    // штабеля — весь дом на складе
+  ];
+  const bands = bandsBox ? [...bandsBox.querySelectorAll('.band')].map((node, i, all) => {
+    const t = TIMING[Math.min(i, TIMING.length - 1)];
+    return { el: node, a: t.a, b: t.b, first: i === 0, last: i === all.length - 1, op: -1, k: -1, on: false };
+  }) : [];
+  const smoothstep = (x, a, b) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  function setOn(b, on) {
+    if (b.on === on) return;
+    b.on = on;
+    b.el.classList.toggle('on', on);
+    if (!on) return;
+    if (b.el._reveal) b.el._reveal.play();          // заголовок собирается из размытия
+    if (window.CountUp) CountUp.replay(b.el);         // цены крутятся и встают
   }
-
-  /* на телефоне один свайп = одна сцена: считаем от точки покоя, во время доводки
-     события прокрутки не слушаем — иначе кадр то откатывался назад, то прыгал через две */
-  if (steps && !reduced) {
-    const stage = $('#stage');
-    let cur = 0, restY = 0, moving = false, timer = null, release = null;
-    const geom = () => {
-      const h = innerHeight, top = stage.offsetTop;
-      const last = top + stage.offsetHeight - h;
-      return { h, top, last, maxStep: Math.max(0, Math.round((last - top) / h)) };
-    };
-    const goTo = i => {
-      const g = geom();
-      cur = Math.max(0, Math.min(g.maxStep, i));
-      const target = Math.min(g.last, Math.max(g.top, g.top + cur * g.h));
-      moving = true;
-      clearTimeout(release);
-      scrollTo({ top: target, behavior: 'smooth' });
-      release = setTimeout(() => {
-        // если плавная прокрутка не сработала (браузер её глушит) — доводим рывком
-        if (Math.abs(scrollY - target) > 8) scrollTo({ top: target });
-        moving = false; restY = scrollY;
-      }, 560);
-    };
-    const settle = () => {
-      if (innerWidth >= 900 || !stage || moving) return;
-      const g = geom();
-      if (scrollY < g.top - 10 || scrollY > g.last + 10) {   // вне шапки листаем как обычно
-        cur = Math.max(0, Math.min(g.maxStep, Math.round((scrollY - g.top) / g.h)));
-        restY = scrollY;
-        return;
-      }
-      const d = (scrollY - restY) / g.h;
-      if (d > 0.06) goTo(cur + 1);
-      else if (d < -0.06) goTo(cur - 1);
-      else if (Math.abs(scrollY - (g.top + cur * g.h)) > 4) goTo(cur);
-    };
-    addEventListener('scroll', () => {
-      if (moving) return;
-      clearTimeout(timer); timer = setTimeout(settle, 90);
-    }, { passive: true });
-    addEventListener('load', () => { restY = scrollY; });
-    restY = scrollY;
-  }
-
   const sceneNo = $('#sceneNo'), sceneBar = $('#sceneBar');
-  const stepEls = steps ? [...steps.querySelectorAll('.step')] : [];
+  function hud(i, p) {
+    if (!sceneNo) return;
+    const n = C.scenes.length;
+    sceneNo.textContent = String(Math.max(1, Math.min(n, i))).padStart(2, '0') + '/' + String(n).padStart(2, '0');
+    sceneBar.style.setProperty('--p', p.toFixed(3));
+  }
+  /* компьютер: прозрачность и подъём считаются от того же сглаженного прогресса, что и кадр */
+  function paintBands(p) {
+    let cur = 0;
+    for (let i = 0; i < bands.length; i++) {
+      const b = bands[i], f = Math.min(0.02, (b.b - b.a) / 3);
+      const inA = b.first ? (p >= b.a ? 1 : 0) : smoothstep(p, b.a, b.a + f);
+      const outB = b.last ? 1 : 1 - smoothstep(p, b.b - f, b.b);
+      const op = inA * outB;
+      const k = b.first ? 1 : Math.min(1, Math.max(0, (p - b.a) / Math.min(0.025, (b.b - b.a) * 0.35)));
+      if (Math.abs(op - b.op) > 0.004) { b.op = op; b.el.style.opacity = op.toFixed(3); setOn(b, op > 0.5); }
+      if (Math.abs(k - b.k) > 0.008) { b.k = k; b.el.style.setProperty('--k', k.toFixed(3)); }
+      if (p >= b.a) cur = i;
+    }
+    hud(cur, p);
+  }
+  /* телефон: такт зажигает свою подпись сразу, остальные гаснут; плавность даёт CSS */
+  function paintBeat(i, p) {
+    bands.forEach((b, n) => {
+      const on = n === i;
+      b.op = on ? 1 : 0; b.k = on ? 1 : 0;
+      b.el.style.opacity = on ? '1' : '0';
+      b.el.style.setProperty('--k', on ? '1' : '0');
+      setOn(b, on);
+    });
+    hud(i, p || 0);
+  }
+
   if (window.Film && $('#film')) {
     window.Film.init({
-      video: $('#film'), stage: $('#stage'), sticky: $('#stageSticky'), stepEls,
-      onProgress: v => { state.scene = Math.max(state.scene, v); paint(); },
-      onStep: (s, f) => {
-        sceneNo.textContent = String(Math.max(1, s)).padStart(2, '0') + '/0' + (C.scenes.length);
-        sceneBar.style.setProperty('--p', f.toFixed(3));
-      }
-    }).catch(err => { console.warn('ролик недоступен:', err); state.scene = 1; paint(); });
-  } else { state.scene = 1; paint(); }
+      video: $('#film'), stage: $('#stage'), sticky: $('#stageSticky'),
+      stops: TIMING.map(t => t.m),
+      onReady: v => { state.scene = Math.max(state.scene, v); paint(); },
+      onMode: () => bands.forEach(b => { b.op = -1; b.k = -1; }),
+      onMove: paintBands,
+      onBeat: paintBeat
+    }).catch(err => { console.warn('ролик недоступен:', err); state.scene = 1; paint(); paintBeat(0, 0); });
+  } else { state.scene = 1; paint(); paintBeat(0, 0); }
 
   /* ---------- надписи, пока дом ещё целый ---------- */
   const heroMorph = $('#heroMorph');

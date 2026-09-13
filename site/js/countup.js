@@ -142,5 +142,17 @@ window.CountUp = (function () {
     });
   }
 
-  return { mount, set, scan };
+  /* заново прокрутить цифры внутри root от нуля — табличка снова вышла в кадр */
+  function replay(root) {
+    if (!root || reduced) return;
+    const now = performance.now();
+    root.querySelectorAll('.cu').forEach(el => {
+      const it = el.__cu;
+      if (!it) return;
+      it.from = 0; it.value = 0; it.t0 = now; it.running = true;
+    });
+    kick();
+  }
+
+  return { mount, set, scan, replay };
 })();

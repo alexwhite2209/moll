@@ -70,9 +70,9 @@
       <video id="film" class="film" aria-hidden="true" muted playsinline preload="auto" disablepictureinpicture poster="assets/film-9x16.jpg"></video>
       <div class="stage-shade" aria-hidden="true"></div>
       <div class="stage-hud" aria-hidden="true"><span id="sceneNo">01/07</span><i id="sceneBar"></i></div>
-    </div>
-    <div class="steps" id="steps">
-      <article class="step step-hero" data-step="0">
+      <!-- подписи живут внутри кадра и уезжают вместе с ним; таблички сцен дорисовываются из data/content.js -->
+      <div class="bands" id="bands">
+        <div class="band band-hero">
         <div class="hero">
           <p class="eyebrow">Молл Строй · Суздальская, 70</p>
           <h1>Пиломатериалы <span>в Нижнем Новгороде</span></h1>
@@ -89,8 +89,8 @@
           </div>
           <p class="scrollhint">Листайте — дом разберётся на материалы</p>
         </div>
-      </article>
-      <!-- scene cards are rendered from data/content.js -->
+        </div>
+      </div>
     </div>
   </section>
 

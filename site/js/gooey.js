@@ -85,30 +85,36 @@ window.Gooey = (function () {
     return { stop() { on = false; io.disconnect(); if (raf) cancelAnimationFrame(raf); } };
   }
 
-  /* одноразовое появление: текст собирается из размытых пятен */
+  /* одноразовое появление: текст собирается из размытых пятен.
+     { manual: true } — не ждать экрана, а вернуть play(): его зовут, когда подпись вышла в кадр */
   function reveal(el, opt) {
-    if (!el) return;
+    if (!el) return null;
     filterId();
     const dur = (opt && opt.duration) || 0.65;
     el.classList.add('gooey-once');
-    if (reduced) { el.style.filter = ''; el.style.opacity = '1'; return; }
+    let raf = 0, safety = 0;
+    const settle = () => { el.style.filter = ''; el.style.opacity = '1'; }; // в конце — чёткий шрифт
+    function play() {
+      if (reduced) { settle(); return; }
+      cancelAnimationFrame(raf); clearTimeout(safety);
+      const t0 = performance.now();
+      safety = setTimeout(() => { cancelAnimationFrame(raf); settle(); }, dur * 1000 + 400);
+      (function run(now) {
+        const p = Math.min(1, Math.max(0, (now - t0) / (dur * 1000)));
+        const e2 = 1 - Math.pow(1 - p, 3);
+        if (p < 1) {
+          el.style.filter = 'url(#gooeyThreshold) blur(' + (7 * (1 - e2)).toFixed(2) + 'px)';
+          el.style.opacity = Math.pow(e2, 0.5).toFixed(3);
+          raf = requestAnimationFrame(run);
+        } else { clearTimeout(safety); settle(); }
+      })(t0);
+    }
+    if ((opt && opt.manual) || reduced) { if (reduced) settle(); return { play }; }
     const io = new IntersectionObserver(es => {
-      es.forEach(e => {
-        if (!e.isIntersecting) return;
-        io.disconnect();
-        const t0 = performance.now();
-        (function run(now) {
-          const p = Math.min(1, (now - t0) / (dur * 1000));
-          const e2 = 1 - Math.pow(1 - p, 3);
-          if (p < 1) {
-            el.style.filter = 'url(#gooeyThreshold) blur(' + (7 * (1 - e2)).toFixed(2) + 'px)';
-            el.style.opacity = Math.pow(e2, 0.5).toFixed(3);
-            requestAnimationFrame(run);
-          } else { el.style.filter = ''; el.style.opacity = '1'; } // в конце — чёткий шрифт
-        })(performance.now());
-      });
+      es.forEach(e => { if (!e.isIntersecting) return; io.disconnect(); play(); });
     }, { rootMargin: '0px 0px -15% 0px' });
     io.observe(el);
+    return { play };
   }
 
   return { cycle, reveal };

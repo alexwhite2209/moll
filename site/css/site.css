@@ -55,24 +55,35 @@ p{margin:0}
 .icon-btn{flex:0 0 44px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--pine);color:#1b130a}
 .icon-btn svg{width:20px;height:20px;fill:currentColor}
 
-/* ---------- stage ---------- */
-.stage{position:relative;background:radial-gradient(120% 60% at 50% 40%,#2a1c10 0%,#130f0c 50%,var(--ground) 78%)}
+/* ---------- stage: скролл-видео, система energy ---------- */
+.stage{position:relative;height:100vh;height:100svh;background:radial-gradient(120% 60% at 50% 40%,#2a1c10 0%,#130f0c 50%,var(--ground) 78%)}
 .stage-sticky{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
+/* компьютер: длина прокрутки, за которую дом разбирается целиком */
+@media (min-width:900px){.stage{height:680vh}}
+/* телефон: такты — шапка ровно в экран, свайпы ловит скрипт, пока шапка стоит на месте */
+.stage.beats{height:100vh;height:100svh;touch-action:pan-y}
+.stage.beats .stage-sticky{position:relative}
+.stage.beats.pinned{touch-action:none}
 .film-wrap{position:absolute;inset:0;overflow:hidden}
 .film{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;background:#0f0d0b}
-.film-hi{opacity:0;transition:opacity .5s ease;background:transparent}
-.film-hi.on{opacity:1}
+.film-hd{opacity:0;transition:opacity .4s ease;background:transparent}
+.film-wrap.hd .film-hd{opacity:1}
 .stage-shade{position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(0deg,rgba(12,10,8,.92) 0%,rgba(12,10,8,.5) 36%,rgba(12,10,8,0) 58%),radial-gradient(140% 90% at 50% 40%,transparent 55%,rgba(8,6,5,.7) 100%)}
 .stage-hud{z-index:3;position:absolute;top:64px;right:14px;display:flex;align-items:center;gap:8px;font:500 .62rem/1 var(--mono);color:var(--muted);letter-spacing:.1em}
 .stage-hud i{display:block;width:44px;height:2px;background:var(--line-2);position:relative;overflow:hidden}
 .stage-hud i::after{content:"";position:absolute;inset:0;background:var(--pine);transform-origin:left;transform:scaleX(var(--p,0))}
-.steps{position:relative;z-index:5;margin-top:-100vh;margin-top:-100svh}
-.step{min-height:100vh;min-height:100svh;display:flex;align-items:flex-end;padding:0 12px calc(var(--dock) + var(--safe) + 14px);pointer-events:none}
-.step > *{pointer-events:auto;min-width:0;max-width:100%}
-.step-pad{min-height:100vh;min-height:100svh;pointer-events:none}
-.step-hero .hero{display:grid;gap:14px;padding:0 4px}
-.step-hero .eyebrow{display:none}
+/* подписи-полосы: у каждой свой отрезок ролика, лежат внутри кадра */
+@property --k{syntax:"<number>";initial-value:0;inherits:true}
+.bands{position:absolute;inset:0;z-index:4;pointer-events:none}
+.band{position:absolute;left:12px;right:12px;bottom:calc(var(--dock) + var(--safe) + 14px);min-width:0;opacity:0;pointer-events:none;
+  transform:translate3d(0,calc((1 - var(--k,0)) * 18px),0)}
+.band.on{pointer-events:auto}
+/* такт: старая подпись гаснет быстро, новая выходит следом — друг на друга не ложатся */
+.stage.beats .band{transition:opacity .2s ease,--k .2s ease}
+.stage.beats .band.on{transition:opacity .45s ease .12s,--k .7s cubic-bezier(.2,.75,.2,1) .12s}
+.band-hero .hero{display:grid;gap:14px;padding:0 4px}
+.band-hero .eyebrow{display:none}
 .hero h1{font-size:clamp(3rem,15vw,5.6rem);font-weight:900;text-transform:uppercase;line-height:.86}
 .hero h1 span{display:block;color:var(--pine);font-size:.62em;line-height:.95;margin-top:.12em}
 .hero .lede{color:#ddd2c2;font-size:1.02rem;max-width:30rem}
@@ -101,16 +112,7 @@ p{margin:0}
 .scrollhint{font:500 .62rem/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
 .scrollhint::before{content:"";width:1px;height:26px;background:linear-gradient(var(--pine),transparent);animation:hint 1.8s ease-in-out infinite}
 @keyframes hint{50%{transform:translateY(6px);opacity:.5}}
-.scard{width:100%;min-width:0;max-width:100%;background:rgba(19,16,13,.4);backdrop-filter:blur(10px) saturate(1.06);-webkit-backdrop-filter:blur(10px) saturate(1.06);border:1px solid var(--line);border-radius:10px;padding:16px 16px 14px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;box-shadow:0 18px 50px rgba(0,0,0,.45);
-  transition:opacity .45s ease,transform .6s cubic-bezier(.2,.75,.2,1)}
-.anim .scard{opacity:0;transform:translate3d(var(--dx,0),26px,0) scale(.985)}
-.anim .scard.in{opacity:1;transform:none}
-/* уходящая исчезает быстрее, приходящая чуть задерживается — не наслаиваются */
-.anim .scard{transition:opacity .28s ease,transform .38s cubic-bezier(.2,.75,.2,1)}
-.anim .scard.in{transition:opacity .42s ease .12s,transform .55s cubic-bezier(.2,.75,.2,1) .12s}
-.side-left .scard{--dx:-28px}
-.side-right .scard{--dx:28px}
-@media (prefers-reduced-motion:reduce){.anim .scard{transform:none}.scard{transition:opacity .2s linear}}
+.scard{width:100%;min-width:0;max-width:100%;background:rgba(19,16,13,.4);backdrop-filter:blur(10px) saturate(1.06);-webkit-backdrop-filter:blur(10px) saturate(1.06);border:1px solid var(--line);border-radius:10px;padding:16px 16px 14px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
 .scard .top{display:flex;justify-content:space-between;align-items:center}
 .scard h2{font-size:2.05rem;text-transform:uppercase}
 .scard .morph{position:relative;height:1.35em;margin:-6px 0 0;font:800 1.35rem/1.35 var(--display);letter-spacing:.01em;text-transform:uppercase;color:var(--pine)}
@@ -120,25 +122,15 @@ p{margin:0}
 .scard .rows div span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#d8cdbe}
 .scard .rows div span:last-child{flex:none;font:500 .72rem/1.6 var(--mono);color:var(--pine);white-space:nowrap}
 .scard .acts{display:grid;gap:8px}
-.step-final{min-height:100vh;min-height:100svh}
-.step-final .scard .acts{grid-template-columns:1fr 1fr}
 
 
 
 /* ---------- телефон: плашки вдвое компактнее и все на одной линии у низа ---------- */
 @media (max-width:899px){
-  /* табличка всегда внизу экрана: на экране она одна, остальные скрыты */
-  .step{align-items:flex-end}
-  .scard{position:fixed;left:12px;right:12px;width:auto;max-width:none;
-    bottom:calc(var(--dock) + var(--safe) + 14px);z-index:6}
-  .anim .scard{pointer-events:none}
-  .anim .scard.in{pointer-events:auto}
   .sec{padding:34px 14px 0}
   .sec-head{gap:8px;margin-bottom:16px}
   .ring-sticky{height:100svh}
   .ring-hint{top:62px}
-  .step{align-items:flex-end;padding-bottom:calc(var(--dock) + var(--safe) + 16px)}
-  .anim .scard{transform:translate3d(0,38px,0) scale(.99)}   /* выходит снизу, без наклона в сторону */
   .scard{padding:12px 12px 10px;gap:7px}
   .scard .top .eyebrow{font-size:.56rem}
   .scard h2{font-size:1.45rem}
@@ -154,32 +146,23 @@ p{margin:0}
   .slate > p{font-size:.88rem}
 }
 
-/* ---------- финал: заставка вместо плашки ---------- */
-.step-final{justify-content:center}
+/* ---------- финал: заставка вместо плашки, приклеена к последнему кадру ---------- */
 .slate{background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;
-  padding:0 6px;width:auto;max-width:32rem;justify-items:center;text-align:center;gap:14px}
-.anim .slate,.anim .slate.in{opacity:1;transform:none;transition:opacity .35s ease}
-/* заставка живёт внутри кадра: уезжает вверх вместе с картинкой */
-.stage-sticky .slate{position:absolute;z-index:4;left:12px;right:12px;width:auto;max-width:none;
-  bottom:calc(var(--dock) + var(--safe) + 14px);pointer-events:none}
-.stage-sticky .slate.in{pointer-events:auto}
-@media (min-width:900px){
-  .stage-sticky .slate{left:6vw;right:auto;width:40vw;max-width:40vw;bottom:9vh;text-align:left;justify-items:start}
-  .stage-sticky .slate .acts{width:auto;grid-template-columns:auto auto}
-}
+  padding:0 6px;width:auto;max-width:32rem;margin:0 auto;justify-items:center;text-align:center;gap:14px}
 .slate .eyebrow,.slate h2 span,.slate .morph,.slate > p,.slate .acts{
   opacity:0;transform:translateY(26px) scale(.97);filter:blur(6px);
   transition:opacity .55s ease,transform .75s cubic-bezier(.2,.75,.2,1),filter .6s ease;
   transition-delay:calc(var(--i,0) * .12s)}
-.anim .slate.in .eyebrow,.anim .slate.in h2 span,.anim .slate.in .morph,
-.anim .slate.in > p,.anim .slate.in .acts{opacity:1;transform:none;filter:none}
+.band.on .slate .eyebrow,.band.on .slate h2 span,.band.on .slate .morph,
+.band.on .slate > p,.band.on .slate .acts{opacity:1;transform:none;filter:none}
 .slate h2{font-size:clamp(2.1rem,min(13vw,8.5vh),4.6rem);line-height:.9;text-shadow:0 12px 44px rgba(0,0,0,.8)}
 .slate h2 span{display:inline-block;transition-delay:calc(var(--i) * .12s + .1s)}
 .slate .morph{height:1.5em;font-size:1.5rem;color:var(--pine);text-shadow:0 8px 30px rgba(0,0,0,.8);transition-delay:.5s}
 .slate > p{color:#e6dccd;font-size:1.02rem;text-shadow:0 6px 26px rgba(0,0,0,.85);transition-delay:.62s}
 .slate .acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;transition-delay:.74s}
 @media (min-width:900px){
-  .step-final .slate{max-width:40rem;width:auto}
+  .band-slate .slate{max-width:none;margin:0;text-align:left;justify-items:start}
+  .band-slate .slate .acts{width:auto;grid-template-columns:auto auto}
   .slate h2{font-size:clamp(2.6rem,min(4.4vw,10vh),5rem)}
   .slate .morph{font-size:1.7rem}
 }
@@ -351,20 +334,12 @@ body.saw-on input,body.saw-on select,body.saw-on textarea{cursor:auto}
   body{padding-bottom:0}
   .dock{display:none}
   .topbar{padding:0 28px}
-  .step{padding:0 6vw 8vh;align-items:center}
-  .step-hero{align-items:flex-end}
-  /* на десктопе табличка тоже держится на экране, только у своего края */
-  .scard{position:fixed;bottom:7vh;width:25vw;min-width:320px;max-width:25vw;z-index:6}
-  .side-left .scard{left:6vw;right:auto}
-  .side-right .scard{right:6vw;left:auto}
-  .anim .scard{pointer-events:none}
-  .anim .scard.in{pointer-events:auto}
-  .step{justify-content:flex-start}
-  .side-right{justify-content:flex-end}
-  .side-left .scard{--dx:-56px}
-  .side-right .scard{--dx:56px}
+  .band{left:6vw;right:auto;width:26vw;bottom:9vh}
+  .band.right{left:auto;right:6vw}
+  .band-hero{width:auto;bottom:8vh}
+  .band-slate{width:40vw}
   .hero{max-width:36rem}
-  .step-hero .eyebrow{display:block}
+  .band-hero .eyebrow{display:block}
   .stage-shade{background:linear-gradient(90deg,rgba(12,10,8,.88) 0%,rgba(12,10,8,.5) 32%,rgba(12,10,8,0) 56%),radial-gradient(140% 100% at 60% 50%,transparent 55%,rgba(8,6,5,.7) 100%)}
   .ring-item{width:240px;height:330px;margin:-165px 0 0 -120px}
   .prods{grid-template-columns:repeat(2,minmax(0,1fr))}
